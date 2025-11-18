@@ -4,15 +4,23 @@ FROM maven:3.9-eclipse-temurin-25
 # Set working directory
 WORKDIR /app
 
-# Copy source code and pom
-COPY src/ ./src/
+# Copy only dependency definitions first (for caching)
 COPY pom.xml .
 
-# Expose port
+# Download dependencies (this layer will be cached)
+RUN mvn dependency:go-offline -B
+
+# Now copy source code
+COPY src/ ./src/
+
+# Build the JAR once during image build
+RUN mvn clean package -DskipTests
+
 EXPOSE 8080
 
 # Set environment variable for model host
 ENV MODEL_HOST="http://model-service:8081"
+ENV SERVER_PORT=8080
 
-# Run the application
-CMD ["mvn", "spring-boot:run"]
+# Just run the JAR (fast startup!)
+CMD ["sh", "-c", "java -jar target/*.jar --server.port=$SERVER_PORT"]
