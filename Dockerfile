@@ -16,6 +16,7 @@ COPY src/ ./src/
 # Build the JAR once during image build
 RUN mvn clean package -DskipTests
 
+#Expose default port
 EXPOSE 8080
 
 # Set environment variable for model host
