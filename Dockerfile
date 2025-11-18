@@ -16,12 +16,12 @@ COPY src/ ./src/
 # Build the JAR once during image build
 RUN mvn clean package -DskipTests
 
-#Expose default port
-EXPOSE 8080
-
-# Set environment variable for model host
+# Set environment variables
 ENV MODEL_HOST="http://model-service:8081"
 ENV SERVER_PORT=8080
+
+# Expose port
+EXPOSE ${SERVER_PORT}
 
 # Just run the JAR (fast startup!)
 CMD ["sh", "-c", "java -jar target/*.jar --server.port=$SERVER_PORT"]
