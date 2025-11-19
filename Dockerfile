@@ -1,5 +1,5 @@
-# Use Maven image with Java 25
-FROM maven:3.9-eclipse-temurin-25
+# Stage 1: Build the application
+FROM maven:3.9-eclipse-temurin-25 AS build
 
 # Set working directory
 WORKDIR /app
@@ -16,6 +16,15 @@ COPY src/ ./src/
 # Build the JAR once during image build
 RUN mvn clean package -DskipTests
 
+# Stage 2: Create the final, smaller image
+FROM eclipse-temurin:25-jre-jammy
+
+# Set working directory
+WORKDIR /app
+
+# Copy the JAR from the build stage
+COPY --from=build /app/target/*.jar app.jar
+
 # Set environment variables
 ENV MODEL_HOST="http://model-service:8081"
 ENV SERVER_PORT=8080
@@ -24,4 +33,4 @@ ENV SERVER_PORT=8080
 EXPOSE ${SERVER_PORT}
 
 # Just run the JAR (fast startup!)
-CMD ["sh", "-c", "java -jar target/*.jar --server.port=$SERVER_PORT"]
+CMD ["java", "-jar", "app.jar", "--server.port=${SERVER_PORT}"]
