@@ -1,0 +1,57 @@
+# The Git Action Workflow
+name: Multi-Platform Release
+
+# Defines the triggering events for the workflow.
+on:
+  release:
+    types: [published]
+
+# Environment variables available to all jobs and steps in the workflow.
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+# A workflow run is made up of one or more jobs.
+jobs:
+  build-and-push-image:
+    name: Build and Release Multi-Platform Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      # Required to check out the repository's code.
+      contents: read
+      # Required to push container images to the GitHub Package Registry.
+      packages: write
+
+    steps:
+      # Step 1: Check out the repository's code onto the runner.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up QEMU. This is necessary for multi-platform builds.
+      # QEMU allows the amd64 runner to emulate and build for arm64.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # Step 3: Set up Docker Buildx.
+      # Allow multi-platform builds.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 4: Log in to the specified container registry.
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 5: Build the Docker image and push it to the registry.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
