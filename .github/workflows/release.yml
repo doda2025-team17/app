@@ -1,4 +1,4 @@
-name: Release Container Image
+name: Release App Container Image
 
 # Trigger workflow on version tags (F8 requirement)
 on:
@@ -44,12 +44,12 @@ jobs:
           
           # Validate they match
           if [ "$POM_VERSION" != "$TAG_VERSION" ]; then
-            echo "❌ Error: pom.xml version ($POM_VERSION) doesn't match tag version ($TAG_VERSION)"
+            echo "Error: pom.xml version ($POM_VERSION) doesn't match tag version ($TAG_VERSION)"
             exit 1
           fi
           
           echo "version=$POM_VERSION" >> $GITHUB_OUTPUT
-          echo "✅ Version validation passed"
+          echo "Version validation passed"
 
       # Multi-architecture setup for F4 requirement
       - name: Set up QEMU
@@ -95,7 +95,7 @@ jobs:
       # Create summary for easy reference in GitHub Actions
       - name: Create release summary
         run: |
-          echo "## 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
