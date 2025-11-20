@@ -1,6 +1,6 @@
 name: Release App Container Image
 
-# Trigger workflow on version tags (F8 requirement)
+# Trigger workflow on version tags
 on:
   push:
     tags:
@@ -51,7 +51,7 @@ jobs:
           echo "version=$POM_VERSION" >> $GITHUB_OUTPUT
           echo "Version validation passed"
 
-      # Multi-architecture setup for F4 requirement
+      # Multi-architecture setup
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -71,7 +71,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64  # F4: Multi-architecture support
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
