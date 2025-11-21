@@ -1,44 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.5.7</version>
-		<relativePath /> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
+
 	<groupId>sms</groupId>
 	<artifactId>frontend</artifactId>
 	<version>1.0.0</version>
+	<name>frontend</name>
+	<description>Frontend app using lib-version</description>
 
 	<properties>
 		<java.version>25</java.version>
 	</properties>
 
+	<!-- Tell Maven where to find lib-version -->
 	<repositories>
 		<repository>
 			<id>github</id>
+			<name>GitHub Packages for lib-version</name>
 			<url>https://maven.pkg.github.com/doda2025-team17/lib-version</url>
 		</repository>
 	</repositories>
 
 	<dependencies>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+
+		<!-- lib-version from GitHub Packages -->
 		<dependency>
 			<groupId>nl.tudelft.doda</groupId>
 			<artifactId>lib-version</artifactId>
 			<version>1.0.1</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

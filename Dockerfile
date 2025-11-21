@@ -1,13 +1,13 @@
 # Stage 1: Build the application
 FROM maven:3.9-eclipse-temurin-25 AS build
 
-# ARG allows passing the GitHub token at build time
-ARG GITHUB_TOKEN
-
 # Set working directory
 WORKDIR /app
 
-# Configure Maven to authenticate to GitHub Packages
+# Accept GitHub token from build args (passed by GitHub Actions)
+ARG GITHUB_TOKEN
+
+# Configure Maven to use GitHub Packages for nl.tudelft.doda:lib-version
 RUN mkdir -p /root/.m2 && \
     printf '<settings>\n\
   <servers>\n\
