@@ -1,6 +1,9 @@
 # Stage 1: Build the application
 FROM maven:3.9-eclipse-temurin-25 AS build
 
+# Set working directory
+WORKDIR /app
+
 # Copy only dependency definitions first (for caching)
 COPY pom.xml .
 
@@ -15,9 +18,6 @@ RUN mvn clean package -DskipTests
 
 # Stage 2: Create the final, smaller image
 FROM eclipse-temurin:25-jre-jammy
-
-# Set working directory
-WORKDIR /app
 
 # Copy the JAR from the build stage
 COPY --from=build /app/target/*.jar app.jar
