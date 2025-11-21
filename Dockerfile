@@ -4,6 +4,21 @@ FROM maven:3.9-eclipse-temurin-25 AS build
 # Set working directory
 WORKDIR /app
 
+# Accept GitHub token from build args (passed by GitHub Actions)
+ARG GITHUB_TOKEN
+
+# Configure Maven to use GitHub Packages for nl.tudelft.doda:lib-version
+RUN mkdir -p /root/.m2 && \
+    printf '<settings>\n\
+  <servers>\n\
+    <server>\n\
+      <id>github</id>\n\
+      <username>x-access-token</username>\n\
+      <password>%s</password>\n\
+    </server>\n\
+  </servers>\n\
+</settings>' "$GITHUB_TOKEN" > /root/.m2/settings.xml
+
 # Copy only dependency definitions first (for caching)
 COPY pom.xml .
 
