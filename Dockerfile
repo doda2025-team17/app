@@ -24,10 +24,10 @@ COPY --from=build /app/target/*.jar app.jar
 
 # Set environment variables
 ENV MODEL_HOST="http://model-service:8081"
-ENV SERVER_PORT=8080
+ENV APP_SERVER_PORT=8080
 
 # Expose port
-EXPOSE ${SERVER_PORT}
+EXPOSE ${APP_SERVER_PORT}
 
 # Just run the JAR (fast startup!)
-CMD ["java", "-jar", "app.jar", "--server.port=${SERVER_PORT}"]
+CMD ["java", "-jar", "app.jar", "--server.port=${APP_SERVER_PORT}"]
