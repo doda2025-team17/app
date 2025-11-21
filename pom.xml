@@ -13,7 +13,7 @@
 
 	<groupId>sms</groupId>
 	<artifactId>frontend</artifactId>
-	<version>1.0.0</version>
+	<version>0.0.4</version>
 	<name>frontend</name>
 	<description>Frontend app using lib-version</description>
 
