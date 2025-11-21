@@ -1,8 +1,23 @@
 # Stage 1: Build the application
 FROM maven:3.9-eclipse-temurin-25 AS build
 
+# ARG allows passing the GitHub token at build time
+ARG GITHUB_TOKEN
+
 # Set working directory
 WORKDIR /app
+
+# Configure Maven to authenticate to GitHub Packages
+RUN mkdir -p /root/.m2 && \
+    printf '<settings>\n\
+  <servers>\n\
+    <server>\n\
+      <id>github</id>\n\
+      <username>x-access-token</username>\n\
+      <password>%s</password>\n\
+    </server>\n\
+  </servers>\n\
+</settings>' "$GITHUB_TOKEN" > /root/.m2/settings.xml
 
 # Copy only dependency definitions first (for caching)
 COPY pom.xml .
