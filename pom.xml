@@ -18,7 +18,7 @@
 	<description>Frontend app using lib-version</description>
 
 	<properties>
-		<java.version>25</java.version>
+		<java.version>17</java.version>
 	</properties>
 
 	<!-- Tell Maven where to find lib-version -->
@@ -41,11 +41,21 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+
 		<!-- lib-version from GitHub Packages -->
 		<dependency>
 			<groupId>nl.tudelft.doda</groupId>
 			<artifactId>lib-version</artifactId>
-			<version>1.0.1</version>
+			<version>1.0.3-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>

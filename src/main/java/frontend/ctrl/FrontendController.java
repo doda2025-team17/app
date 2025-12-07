@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import frontend.data.Sms;
+import frontend.metrics.MetricsRecorder;
+import io.micrometer.core.instrument.Timer;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
@@ -24,8 +26,11 @@ public class FrontendController {
 
     private RestTemplateBuilder rest;
 
-    public FrontendController(RestTemplateBuilder rest, Environment env) {
+    private MetricsRecorder metrics;
+
+    public FrontendController(RestTemplateBuilder rest, Environment env, MetricsRecorder metrics) {
         this.rest = rest;
+        this.metrics = metrics;
         this.modelHost = env.getProperty("MODEL_HOST");
         assertModelHost();
     }
@@ -60,10 +65,17 @@ public class FrontendController {
     @PostMapping({ "", "/" })
     @ResponseBody
     public Sms predict(@RequestBody Sms sms) {
-        System.out.printf("Requesting prediction for \"%s\" ...\n", sms.sms);
-        sms.result = getPrediction(sms);
-        System.out.printf("Prediction: %s\n", sms.result);
-        return sms;
+        metrics.incrementInFlight();
+        Timer.Sample sample = metrics.startTimer();
+        try {
+            System.out.printf("Requesting prediction for \"%s\" ...\n", sms.sms);
+            sms.result = getPrediction(sms);
+            System.out.printf("Prediction: %s\n", sms.result);
+            metrics.recordClassification(sms.result, sample);
+            return sms;
+        } finally {
+            metrics.decrementInFlight();
+        }
     }
 
     private String getPrediction(Sms sms) {
