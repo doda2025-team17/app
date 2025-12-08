@@ -55,7 +55,7 @@
 		<dependency>
 			<groupId>nl.tudelft.doda</groupId>
 			<artifactId>lib-version</artifactId>
-			<version>1.0.3-SNAPSHOT</version>
+			<version>1.0.1</version>
 		</dependency>
 
 		<dependency>
