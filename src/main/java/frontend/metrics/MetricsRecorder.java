@@ -16,6 +16,14 @@ public class MetricsRecorder {
 
     public MetricsRecorder(MeterRegistry registry) {
         this.registry = registry;
+        
+        String appVersion = System.getenv("APP_VERSION");
+        if (appVersion == null || appVersion.isEmpty()) {
+            appVersion = "v1";  // Default value
+        }
+        
+        registry.config().commonTags("version", appVersion);
+        
         this.classificationTimer = Timer.builder("sms_request_latency_seconds")
                 .description("Latency for SMS classification requests")
                 .publishPercentileHistogram()
