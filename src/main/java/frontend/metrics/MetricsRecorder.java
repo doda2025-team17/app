@@ -17,12 +17,12 @@ public class MetricsRecorder {
     public MetricsRecorder(MeterRegistry registry) {
         this.registry = registry;
         
-        String appVersion = System.getenv("APP_VERSION");
-        if (appVersion == null || appVersion.isEmpty()) {
-            appVersion = "v1";  // Default value
+        String dashboardVersion = System.getenv("DASHBOARD_VERSION");
+        if (dashboardVersion == null || dashboardVersion.isEmpty()) {
+            dashboardVersion = "v1";  // Default value
         }
         
-        registry.config().commonTags("version", appVersion);
+        registry.config().commonTags("version", dashboardVersion);
         
         this.classificationTimer = Timer.builder("sms_request_latency_seconds")
                 .description("Latency for SMS classification requests")
