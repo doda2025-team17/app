@@ -8,7 +8,14 @@
 </head>
 <body>
 <span id="hostname" th:text="${hostname}"></span>
-<h1>SMS Checker</h1>
+<h1>SMS Checker
+
+	<div style="font-size: 0.9em; opacity: 0.8;">
+		Dashboard version: <b th:text="${dashboardVersion}">v1</b>
+	</div>
+
+
+</h1>
 
 <form>
 
