@@ -2,6 +2,7 @@ package frontend.metrics;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.micrometer.core.instrument.Counter;
 import org.springframework.stereotype.Component;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -13,6 +14,10 @@ public class MetricsRecorder {
     private final MeterRegistry registry;
     private final Timer classificationTimer;
     private final AtomicInteger inFlight;
+    private final Counter cacheHits;
+    private final Counter cacheMisses;
+    private final Counter modelCalls;
+
 
     public MetricsRecorder(MeterRegistry registry) {
         this.registry = registry;
@@ -23,7 +28,20 @@ public class MetricsRecorder {
         }
         
         registry.config().commonTags("version", dashboardVersion);
-        
+
+        this.cacheHits = Counter.builder("sms_cache_hits_total")
+                .description("Number of cache hits for SMS classification")
+                .register(registry);
+
+        this.cacheMisses = Counter.builder("sms_cache_misses_total")
+                .description("Number of cache misses for SMS classification")
+                .register(registry);
+
+        this.modelCalls = Counter.builder("sms_model_calls_total")
+                .description("Number of calls from frontend to model-service")
+                .register(registry);
+
+
         this.classificationTimer = Timer.builder("sms_request_latency_seconds")
                 .description("Latency for SMS classification requests")
                 .publishPercentileHistogram()
@@ -55,5 +73,17 @@ public class MetricsRecorder {
         if (inFlight != null) {
             inFlight.decrementAndGet();
         }
+    }
+
+    public void recordCacheHit() {
+        cacheHits.increment();
+    }
+
+    public void recordCacheMiss() {
+        cacheMisses.increment();
+    }
+
+    public void recordModelCall() {
+        modelCalls.increment();
     }
 }

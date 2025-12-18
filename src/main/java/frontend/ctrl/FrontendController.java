@@ -2,6 +2,8 @@ package frontend.ctrl;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.env.Environment;
@@ -30,6 +32,18 @@ public class FrontendController {
     private RestTemplateBuilder rest;
 
     private MetricsRecorder metrics;
+
+    private static class CacheEntry {
+        final String result;
+        final long expiresAtMillis;
+        CacheEntry(String result, long expiresAtMillis) {
+            this.result = result;
+            this.expiresAtMillis = expiresAtMillis;
+        }
+    }
+
+    private final ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
+    private final long cacheTtlMillis = Duration.ofMinutes(5).toMillis();
 
     public FrontendController(RestTemplateBuilder rest, Environment env, MetricsRecorder metrics) {
         this.rest = rest;
@@ -62,13 +76,10 @@ public class FrontendController {
     @GetMapping("/")
     public String index(Model m) {
         m.addAttribute("hostname", modelHost);
-
-        // read from environment variable (set by Helm deployment)
-        String dashV = System.getenv().getOrDefault("DASHBOARD_VERSION", "v1");
-        m.addAttribute("dashboardVersion", dashV);
-
+        m.addAttribute("dashboardVersion", System.getenv().getOrDefault("DASHBOARD_VERSION", "v1"));
         return "sms/index";
     }
+
 
     @PostMapping({ "", "/" })
     @ResponseBody
@@ -78,13 +89,24 @@ public class FrontendController {
 
         String dashV = System.getenv().getOrDefault("DASHBOARD_VERSION", "v1");
 
+        boolean cacheHit = false;
+
         try {
-            System.out.printf("Requesting prediction for \"%s\" ...\n", sms.sms);
-            boolean cacheHit = false;
+            String key = sms.sms == null ? "" : sms.sms.trim();
+            long now = System.currentTimeMillis();
 
-            sms.result = getPrediction(sms);
+            CacheEntry cached = cache.get(key);
+            if (cached != null && cached.expiresAtMillis > now) {
+                cacheHit = true;
+                metrics.recordCacheHit();
+                sms.result = cached.result;   // use cached result
+            } else {
+                metrics.recordCacheMiss();
+                metrics.recordModelCall();
+                sms.result = getPrediction(sms);
+                cache.put(key, new CacheEntry(sms.result, now + cacheTtlMillis));
+            }
 
-            System.out.printf("Prediction: %s\n", sms.result);
             metrics.recordClassification(sms.result, sample);
 
             HttpHeaders h = new HttpHeaders();
