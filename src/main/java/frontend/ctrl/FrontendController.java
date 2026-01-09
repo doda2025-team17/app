@@ -2,8 +2,6 @@ package frontend.ctrl;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Duration;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.env.Environment;
@@ -32,18 +30,6 @@ public class FrontendController {
     private RestTemplateBuilder rest;
 
     private MetricsRecorder metrics;
-
-    private static class CacheEntry {
-        final String result;
-        final long expiresAtMillis;
-        CacheEntry(String result, long expiresAtMillis) {
-            this.result = result;
-            this.expiresAtMillis = expiresAtMillis;
-        }
-    }
-
-    private final ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
-    private final long cacheTtlMillis = Duration.ofMinutes(5).toMillis();
 
     public FrontendController(RestTemplateBuilder rest, Environment env, MetricsRecorder metrics) {
         this.rest = rest;
@@ -89,35 +75,24 @@ public class FrontendController {
 
         String dashV = System.getenv().getOrDefault("DASHBOARD_VERSION", "v1");
 
-        boolean cacheHit = false;
-
         try {
-            String key = sms.sms == null ? "" : sms.sms.trim();
-            long now = System.currentTimeMillis();
+            // v1 baseline: no cache, always call model
+            metrics.recordCacheMiss();
+            metrics.recordModelCall();
 
-            CacheEntry cached = cache.get(key);
-            if (cached != null && cached.expiresAtMillis > now) {
-                cacheHit = true;
-                metrics.recordCacheHit();
-                sms.result = cached.result;   // use cached result
-            } else {
-                metrics.recordCacheMiss();
-                metrics.recordModelCall();
-                sms.result = getPrediction(sms);
-                cache.put(key, new CacheEntry(sms.result, now + cacheTtlMillis));
-            }
+            sms.result = getPrediction(sms);
 
             metrics.recordClassification(sms.result, sample);
 
             HttpHeaders h = new HttpHeaders();
             h.add("X-App-Version", dashV);
-            h.add("X-Cache", cacheHit ? "HIT" : "MISS");
 
             return new ResponseEntity<>(sms, h, HttpStatus.OK);
         } finally {
             metrics.decrementInFlight();
         }
     }
+
 
     private String getPrediction(Sms sms) {
         try {
