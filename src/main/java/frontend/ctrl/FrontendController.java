@@ -5,6 +5,9 @@ import java.net.URISyntaxException;
 
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -59,24 +62,37 @@ public class FrontendController {
     @GetMapping("/")
     public String index(Model m) {
         m.addAttribute("hostname", modelHost);
+        m.addAttribute("dashboardVersion", System.getenv().getOrDefault("DASHBOARD_VERSION", "v1"));
         return "sms/index";
     }
 
+
     @PostMapping({ "", "/" })
     @ResponseBody
-    public Sms predict(@RequestBody Sms sms) {
+    public ResponseEntity<Sms> predict(@RequestBody Sms sms) {
         metrics.incrementInFlight();
         Timer.Sample sample = metrics.startTimer();
+
+        String dashV = System.getenv().getOrDefault("DASHBOARD_VERSION", "v1");
+
         try {
-            System.out.printf("Requesting prediction for \"%s\" ...\n", sms.sms);
+            // v1 baseline: no cache, always call model
+            metrics.recordCacheMiss();
+            metrics.recordModelCall();
+
             sms.result = getPrediction(sms);
-            System.out.printf("Prediction: %s\n", sms.result);
+
             metrics.recordClassification(sms.result, sample);
-            return sms;
+
+            HttpHeaders h = new HttpHeaders();
+            h.add("X-App-Version", dashV);
+
+            return new ResponseEntity<>(sms, h, HttpStatus.OK);
         } finally {
             metrics.decrementInFlight();
         }
     }
+
 
     private String getPrediction(Sms sms) {
         try {
