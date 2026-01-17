@@ -80,7 +80,6 @@ public class FrontendController {
         return "sms/index";
     }
 
-
     @PostMapping({ "", "/" })
     @ResponseBody
     public ResponseEntity<Sms> predict(@RequestBody Sms sms) {
