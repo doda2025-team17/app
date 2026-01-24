@@ -82,37 +82,15 @@ public class FrontendController {
 
     @PostMapping({ "", "/" })
     @ResponseBody
-    public ResponseEntity<Sms> predict(@RequestBody Sms sms) {
+    public Sms predict(@RequestBody Sms sms) {
         metrics.incrementInFlight();
-        Timer.Sample sample = metrics.startTimer();
-
-        String dashV = System.getenv().getOrDefault("DASHBOARD_VERSION", "v1");
-
-        boolean cacheHit = false;
-
+        long startNanos = metrics.startTimer();  // Changed from Timer.Sample
         try {
-            String key = sms.sms == null ? "" : sms.sms.trim();
-            long now = System.currentTimeMillis();
-
-            CacheEntry cached = cache.get(key);
-            if (cached != null && cached.expiresAtMillis > now) {
-                cacheHit = true;
-                metrics.recordCacheHit();
-                sms.result = cached.result;   // use cached result
-            } else {
-                metrics.recordCacheMiss();
-                metrics.recordModelCall();
-                sms.result = getPrediction(sms);
-                cache.put(key, new CacheEntry(sms.result, now + cacheTtlMillis));
-            }
-
-            metrics.recordClassification(sms.result, sample);
-
-            HttpHeaders h = new HttpHeaders();
-            h.add("X-App-Version", dashV);
-            h.add("X-Cache", cacheHit ? "HIT" : "MISS");
-
-            return new ResponseEntity<>(sms, h, HttpStatus.OK);
+            System.out.printf("Requesting prediction for \"%s\" ...\n", sms.sms);
+            sms.result = getPrediction(sms);
+            System.out.printf("Prediction: %s\n", sms.result);
+            metrics.recordClassification(sms.result, startNanos);  // Pass nanos directly
+            return sms;
         } finally {
             metrics.decrementInFlight();
         }
