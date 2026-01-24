@@ -2,9 +2,10 @@ package frontend.metrics;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.micrometer.core.instrument.Counter;
 import org.springframework.stereotype.Component;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
@@ -24,15 +25,15 @@ public class MetricsRecorder {
         
         String dashboardVersion = System.getenv("DASHBOARD_VERSION");
         if (dashboardVersion == null || dashboardVersion.isEmpty()) {
-            dashboardVersion = "v1";  // Default value
+            dashboardVersion = "v1"; // Default value
         }
         
         registry.config().commonTags("dashboard_version", dashboardVersion);
-
+        
         this.cacheHits = Counter.builder("sms_cache_hits_total")
                 .description("Number of cache hits for SMS classification")
                 .register(registry);
-
+        
         this.cacheMisses = Counter.builder("sms_cache_misses_total")
                 .description("Number of cache misses for SMS classification")
                 .register(registry);
@@ -40,15 +41,20 @@ public class MetricsRecorder {
         this.modelCalls = Counter.builder("sms_model_calls_total")
                 .description("Number of calls from frontend to model-service")
                 .register(registry);
-
+        
 
         this.classificationTimer = Timer.builder("sms_request_latency_seconds")
                 .description("Latency for SMS classification requests")
                 .publishPercentileHistogram()
                 .tags("endpoint", "/sms")
                 .register(registry);
-
-        this.inFlight = registry.gauge("sms_active_requests", new AtomicInteger(0));
+        
+        // FIX: Create the AtomicInteger FIRST, then register gauge pointing to it
+        this.inFlight = new AtomicInteger(0);
+        Gauge.builder("sms_active_requests", this.inFlight, AtomicInteger::get)
+                .description("Current number of active SMS classification requests")
+                .tags("endpoint", "/sms")
+                .register(registry);
     }
 
     public Timer.Sample startTimer() {
