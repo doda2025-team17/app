@@ -27,7 +27,7 @@ public class MetricsRecorder {
             dashboardVersion = "v1";  // Default value
         }
         
-        registry.config().commonTags("version", dashboardVersion);
+        registry.config().commonTags("dashboard_version", dashboardVersion);
 
         this.cacheHits = Counter.builder("sms_cache_hits_total")
                 .description("Number of cache hits for SMS classification")
