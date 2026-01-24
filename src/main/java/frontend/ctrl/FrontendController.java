@@ -7,9 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -121,7 +119,16 @@ public class FrontendController {
     private String getPrediction(Sms sms) {
         try {
             var url = new URI(modelHost + "/predict");
-            var c = rest.build().postForEntity(url, sms, Sms.class);
+
+            String dashV = System.getenv().getOrDefault("DASHBOARD_VERSION", "v1");
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-app-version", dashV);
+
+            HttpEntity<Sms> entity = new HttpEntity<>(sms, headers);
+
+            var c = rest.build().postForEntity(url, entity, Sms.class);
             return c.getBody().result.trim();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
