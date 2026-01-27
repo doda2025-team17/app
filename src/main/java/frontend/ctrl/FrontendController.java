@@ -7,9 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,7 +17,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import frontend.data.Sms;
 import frontend.metrics.MetricsRecorder;
-import io.micrometer.core.instrument.Timer;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
@@ -97,11 +93,25 @@ public class FrontendController {
     }
 
     private String getPrediction(Sms sms) {
+        String key = sms.sms == null ? "" : sms.sms.trim();
+
+        long now = System.currentTimeMillis();
+        CacheEntry cached = cache.get(key);
+        if (cached != null && cached.expiresAtMillis > now) {
+            metrics.recordCacheHit();
+            return cached.result;
+        }
+
+        metrics.recordCacheMiss();
+
         try {
             var url = new URI(modelHost + "/predict");
-            var c = rest.build().postForEntity(url, sms, Sms.class);
             metrics.recordModelCall();
-            return c.getBody().result.trim();
+            var c = rest.build().postForEntity(url, sms, Sms.class);
+            String result = c.getBody().result.trim();
+            cache.put(key, new CacheEntry(result, now + cacheTtlMillis));
+            return result;
+
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
