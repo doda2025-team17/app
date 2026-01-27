@@ -100,6 +100,7 @@ public class FrontendController {
         try {
             var url = new URI(modelHost + "/predict");
             var c = rest.build().postForEntity(url, sms, Sms.class);
+            metrics.recordModelCall();
             return c.getBody().result.trim();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
