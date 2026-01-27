@@ -97,10 +97,25 @@ public class FrontendController {
     }
 
     private String getPrediction(Sms sms) {
+        String key = sms.sms == null ? "" : sms.sms.trim();
+
+        long now = System.currentTimeMillis();
+        CacheEntry cached = cache.get(key);
+        if (cached != null && cached.expiresAtMillis > now) {
+            metrics.recordCacheHit();
+            return cached.result;
+        }
+
+        metrics.recordCacheMiss();
+
         try {
             var url = new URI(modelHost + "/predict");
+            metrics.recordModelCall();
             var c = rest.build().postForEntity(url, sms, Sms.class);
-            return c.getBody().result.trim();
+            String result = c.getBody().result.trim();
+            cache.put(key, new CacheEntry(result, now + cacheTtlMillis));
+            return result;
+
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
